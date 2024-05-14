@@ -3,11 +3,12 @@ const express = require('express');
 const passport = require('passport');
 const {googleStrategyInstance ,azureADStrategyInstance }= require('./services/passport');
 const session = require('express-session');
-const SQLiteStore = require('connect-sqlite3')(session);
-const { PrismaClient } = require('@prisma/client');
+const SQLiteStore = require('connect-sqlite3')(session);//for session
 const path = require('path'); 
-const prisma = new PrismaClient();
 const app = express();
+const {db,findUserById} = require('./services/database');
+
+
 
 // Middleware
 app.use(express.json());
@@ -21,8 +22,8 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
-passport.use('azure-ad', azureADStrategyInstance(prisma));
-passport.use('google', googleStrategyInstance(prisma));
+passport.use('azure-ad', azureADStrategyInstance(db));
+passport.use('google', googleStrategyInstance(db));
 
 passport.serializeUser((user, done) => {
   // Serialize user object
@@ -30,17 +31,13 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser(async (user, done) => {
-  const dbuser = await prisma.user.findUnique({
-      where: {
-        id: user.id,
-      },
-    });
+  const dbuser = await findUserById(db,user);
+    console.dir(dbuser);
   done(null, dbuser);
 });
 
-// Middleware to add Prisma instance to request context
 app.use((req, res, next) => {
-  req.prisma = prisma;
+  req.db = db ;
   next();
 });
 

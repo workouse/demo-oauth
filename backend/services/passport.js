@@ -1,5 +1,6 @@
 const passportAzureAD = require('passport-azure-ad');
 const passportGoogleOAuth2 = require('passport-google-oauth20');
+const {findUserByProviderIdAndProvider,createUser} = require('./database');
 
 // Passport Configuration for Azure AD
 const azureADStrategy = {
@@ -13,55 +14,31 @@ const azureADStrategy = {
     scope: ['profile', 'offline_access','email', 'openid'],
 };
 
-const azureADStrategyInstance = (prisma)=> {
+const azureADStrategyInstance = (db)=> {
         return new passportAzureAD.OIDCStrategy(azureADStrategy,
             async (accessToken, refreshToken, profile, done) => {
-                let user = await prisma.user.findFirst({
-                    where: {
-                        providerId: profile.id,
-                        provider: 'azure',
-                    },
-                });
+                let user = await findUserByProviderIdAndProvider(db,profile.id,'azure');
 
                 if (!user) {
                     console.dir(profile);
-                    user = await prisma.user.create({
-                        data: {
-                            username: profile._json.email,
-                            email: profile._json.email,
-                            providerId: profile.oid,
-                            provider: 'azure',
-                        },
-                    });
+                    user = await createUser(db,profile._json.email,profile._json.email,profile.oid,'azure') ;
                 }    
                 done(null, user);
             });
 };
 
-const googleStrategyInstance = (prisma) => {
+const googleStrategyInstance = (db) => {
     return new passportGoogleOAuth2.Strategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: 'http://localhost:3000/auth/google/callback',
     }, async (accessToken, refreshToken, profile, done) => {
         console.dir(profile);
-        let user = await prisma.user.findFirst({
-            where: {
-                providerId: profile.id.toString(),
-                provider: 'google',
-            },
-        });
+        let user = await findUserByProviderIdAndProvider(db,profile.id.toString(),'google')
 
         if (!user) {
             // If user doesn't exist, create a new user
-            user = await prisma.user.create({
-                data: {
-                    username: profile.emails[0].value,
-                    email: profile.emails[0].value,
-                    providerId: profile.id,
-                    provider: 'google',
-                },
-            });
+            user = await createUser(db,profile.emails[0].value,profile.emails[0].value,profile.id,'google');
         }    
         done(null, user);
     }) ;

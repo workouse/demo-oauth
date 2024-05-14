@@ -1,4 +1,4 @@
-FROM node:16 
+FROM node:16.11.1
 #frontend build
 WORKDIR /usr/src/app/frontend
 COPY frontend/package*.json ./
@@ -11,8 +11,6 @@ WORKDIR /usr/src/app/backend
 COPY backend/package*.json ./
 RUN npm install
 COPY backend .
-
-RUN npx prisma generate
 
 # Expose port
 EXPOSE 3000
