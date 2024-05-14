@@ -5,12 +5,12 @@ const router = express.Router();
 
 // Authentication route for Azure AD
 router.get('/azure', passport.authenticate('azure-ad', {
-  successRedirect: '/hello',
+  successRedirect: '/',
   failureRedirect: '/',
 }));
 
 router.post('/azure/callback', passport.authenticate('azure-ad', {
-  successRedirect: '/hello',
+  successRedirect: '/',
   failureRedirect: '/',
 }));
 
@@ -18,7 +18,7 @@ router.post('/azure/callback', passport.authenticate('azure-ad', {
 router.get('/google', passport.authenticate('google', { scope: ['profile', 'email'] }));
 
 router.get('/google/callback', passport.authenticate('google', {
-  successRedirect: '/hello',
+  successRedirect: '/',
   failureRedirect: '/',
 }));
 
