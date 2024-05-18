@@ -8,7 +8,7 @@ const azureADStrategy = {
     clientID: process.env.AZURE_CLIENT_ID,
     clientSecret: process.env.AZURE_CLIENT_SECRET,
     responseType: 'code',
-    redirectUrl: 'http://localhost:3000/auth/azure/callback',
+    redirectUrl: process.env.DOMAIN+'/auth/azure/callback',
     responseMode: 'form_post',
     allowHttpForRedirectUrl: true, // Required during development
     scope: ['profile', 'offline_access','email', 'openid'],
@@ -31,7 +31,7 @@ const googleStrategyInstance = (db) => {
     return new passportGoogleOAuth2.Strategy({
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: 'http://localhost:3000/auth/google/callback',
+        callbackURL: process.env.DOMAIN+'/auth/google/callback',
     }, async (accessToken, refreshToken, profile, done) => {
         console.dir(profile);
         let user = await findUserByProviderIdAndProvider(db,profile.id.toString(),'google')
