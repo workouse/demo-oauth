@@ -29,16 +29,19 @@ const createPassword = async (password) => {
 router.post('/register', async (req, res) => {
     let username = req.body.username;
     let password = req.body.password;
+    try{ 
+        let {salt,hashedPassword} = await createPassword(password);
+        let user = await createUser(req.db,username, hashedPassword,salt, username,null, 'local');
 
-
-    let {salt,hashedPassword} = await createPassword(password);
-    
-    let user = await createUser(req.db,username, hashedPassword,salt, username,null, 'local');
-
-    res.json({
-        message: 'User created successfully.',
-        user:user 
-    });
+        res.json({
+            message: 'User created successfully.',
+            user:user 
+        });
+    }catch(err){
+        res.status(400).json({
+            message: err.message
+        });
+    }
 });
 
 module.exports = router;

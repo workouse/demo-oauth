@@ -74,3 +74,30 @@
 - [Passport](http://www.passportjs.org/)
 
 
+## FAQ
+
+### How to add new user with password 
+You need to use [/users/register](https://sf111.lab.sgigs.com/users/register) endpoint with a POST request and a JSON body like this:
+
+```json
+{
+    "username": "user@example.com",
+    "password": "password"
+}
+```
+Do not add user to database directly, password is hashed before saving to database.
+
+### How to add new user with Google or Azure
+Use sqlite3 cli to connect to the database and add a new user with the following SQL query:
+```sql
+INSERT INTO user (username, hashed_password, salt, email, providerId, provider) VALUES (?, ?, ?, ?,?,?)'
+```
+- `username` is the email of the user 
+- `hashed_password` is the hashed password of the user, can be null for Google and Azure users
+- `salt` is the salt of the user, can be null for Google and Azure users
+- `email` is the email of the user
+- `providerId` is the id of the user in the provider (Google or Azure)
+- `provider` is the provider name (google or azure)
+
+
+

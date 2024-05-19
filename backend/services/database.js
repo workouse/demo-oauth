@@ -50,18 +50,29 @@ function findUserByProviderIdAndProvider(db, providerId, provider) {
 }
 function createUser(db,username, hashed_password, salt, email, providerId, provider) {
     return new Promise((resolve, reject) => {
-        db.run(
-            'INSERT INTO user (username, hashed_password, salt, email, providerId, provider) VALUES (?, ?, ?, ?,?,?)',
-            [username, hashed_password,salt, email, providerId, provider],
-            function(err) {
-                if (err) {
-                    reject(err);
-                    return;
-                }
-                // Resolve with the ID of the newly inserted user
-                resolve(this.lastID);
+        db.run('SELECT * FROM user WHERE username = ?', [username], (err, row) => {
+            if (err) {
+                reject(err);
+                return;
             }
-        );
+            if (row) {
+                reject(new Error('User already exists'));
+                return;
+            }
+            db.run(
+                'INSERT INTO user (username, hashed_password, salt, email, providerId, provider) VALUES (?, ?, ?, ?,?,?)',
+                [username, hashed_password,salt, email, providerId, provider],
+                function(err) {
+                    if (err) {
+                        reject(err);
+                        return;
+                    }
+                    // Resolve with the ID of the newly inserted user
+                    resolve(this.lastID);
+                }
+            );
+        });
+
     });
 }
 function findUserById(db,userId) {
