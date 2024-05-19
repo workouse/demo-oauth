@@ -57,16 +57,28 @@
 
 ### Run with npm
 
-- Clone the repository
+- Clone the repository `cd /home` `git clone https://py@gl3.freegigs.net/py/passprt.git` `cd passprt` `git checkout master`
 - Make configuration changes as mentioned above
 - Go to the frontend directory `cd frontend`
 - Run `npm install`
-- Run `npm build`
+- Run `npm run build`
 - Go to the root directory `cd ..`
 - Go to the backend directory `cd backend`
 - Run `npm install`
 - Run `npm start`
 - Open `http://localhost:3000` in your browser
+- Add the following to nginx.conf:
+
+```
+  location / {
+          proxy_pass http://localhost:3000;
+          proxy_http_version 1.1;
+          proxy_set_header Upgrade $http_upgrade;
+          proxy_set_header Connection 'upgrade';
+          proxy_set_header Host $host;
+          proxy_cache_bypass $http_upgrade;
+  }
+```
 
 
 ## FAQ
