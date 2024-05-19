@@ -1,7 +1,7 @@
 require('dotenv').config(); // Load environment variables from .env file
 const express = require('express');
 const passport = require('passport');
-const {googleStrategyInstance ,azureADStrategyInstance }= require('./services/passport');
+const {googleStrategyInstance ,azureADStrategyInstance, localStrategy }= require('./services/passport');
 const session = require('express-session');
 const SQLiteStore = require('connect-sqlite3')(session);//for session
 const path = require('path'); 
@@ -24,6 +24,7 @@ app.use(passport.session());
 
 passport.use('azure-ad', azureADStrategyInstance(db));
 passport.use('google', googleStrategyInstance(db));
+passport.use('local', localStrategy(db));
 
 passport.serializeUser((user, done) => {
   // Serialize user object
@@ -32,7 +33,6 @@ passport.serializeUser((user, done) => {
 
 passport.deserializeUser(async (user, done) => {
   const dbuser = await findUserById(db,user);
-    console.dir(dbuser);
   done(null, dbuser);
 });
 

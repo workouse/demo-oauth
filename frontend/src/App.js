@@ -8,8 +8,15 @@ function App() {
   let [user,setUser]=useState(null);
     useEffect(()=>{
         fetch('/users/me')
-            .then(res=>res.json())
-            .then(user=>setUser(user));
+            .then(res=>{
+                if(res.status===401){
+                    return null;
+                }
+                return res.json()
+            })
+            .then(user=>{
+                setUser(user)
+            });
     },[]);
   return (
     <div className="App">

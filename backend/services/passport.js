@@ -1,6 +1,8 @@
 const passportAzureAD = require('passport-azure-ad');
 const passportGoogleOAuth2 = require('passport-google-oauth20');
+const LocalStrategy = require('passport-local');
 const {findUserByProviderIdAndProvider,createUser} = require('./database');
+const crypto = require('crypto');
 
 // Passport Configuration for Azure AD
 const azureADStrategy = {
@@ -17,13 +19,14 @@ const azureADStrategy = {
 const azureADStrategyInstance = (db)=> {
         return new passportAzureAD.OIDCStrategy(azureADStrategy,
             async (accessToken, refreshToken, profile, done) => {
-                let user = await findUserByProviderIdAndProvider(db,profile.id,'azure');
+                let userObj = await findUserByProviderIdAndProvider(db,profile.id,'azure');
 
-                if (!user) {
-                    console.dir(profile);
-                    user = await createUser(db,profile._json.email,profile._json.email,profile.oid,'azure') ;
-                }    
-                done(null, user);
+                if (!userObj) {
+                    userId = await createUser(db,profile._json.email,null,null,profile._json.email,profile.oid,'azure') ;
+                }else{
+                    userId = userObj.id;
+                }
+                done(null, userId);
             });
 };
 
@@ -33,19 +36,36 @@ const googleStrategyInstance = (db) => {
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
         callbackURL: process.env.DOMAIN+'/auth/google/callback',
     }, async (accessToken, refreshToken, profile, done) => {
-        console.dir(profile);
-        let user = await findUserByProviderIdAndProvider(db,profile.id.toString(),'google')
-
-        if (!user) {
+        let userObj = await findUserByProviderIdAndProvider(db,profile.id.toString(),'google')
+        
+        if (!userObj) {
             // If user doesn't exist, create a new user
-            user = await createUser(db,profile.emails[0].value,profile.emails[0].value,profile.id,'google');
-        }    
-        done(null, user);
+            userId = await createUser(db,profile.emails[0].value,null,null,profile.emails[0].value,profile.id,'google');
+        }else{
+            userId = userObj.id;
+        }
+        done(null, userId);
     }) ;
 };
 
+const localStrategy = (db)=> new LocalStrategy(function verify(username, password, cb) {
+  db.get('SELECT * FROM user WHERE username = ?', [ username ], function(err, user) {
+    if (err) { return cb(err); }
+    if (!user) { return cb(null, false, { message: 'Incorrect username or password.' }); }
+    let bufferHashedPassword = Buffer.from(user.hashed_password, 'hex');
+
+    crypto.pbkdf2(password, user.salt, 310000, 32, 'sha256', function(err, hashedPassword) {
+      if (err) { return cb(err); }
+      if (!crypto.timingSafeEqual(bufferHashedPassword, hashedPassword)) {
+        return cb(null, false, { message: 'Incorrect username or password.' });
+      }
+      return cb(null, user.id);
+    });
+  });
+});
 
 module.exports = { 
     azureADStrategyInstance,
-    googleStrategyInstance
+    googleStrategyInstance,
+    localStrategy
 };
